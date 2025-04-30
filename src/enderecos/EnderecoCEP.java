@@ -1,4 +1,4 @@
-package endereços;
+package enderecos;
 
 public record EnderecoCEP(String cep,
                           String logradouro,
