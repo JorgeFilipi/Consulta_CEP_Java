@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import enderecos.Endereco;
 import enderecos.EnderecoCEP;
+import enderecos.GerarArquivo;
 
 import java.io.IOException;
 import java.net.URI;
@@ -21,27 +22,30 @@ public class API {
         String cep = sc.nextLine();
 
         var url = "https://viacep.com.br/ws/" + cep + "/json/";
-        HttpClient client = HttpClient.newHttpClient();
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .build();
+        HttpResponse<String> response = null;
+        try {
+            response = HttpClient
+                    .newHttpClient()
+                    .send(request, HttpResponse.BodyHandlers.ofString());
 
-        HttpResponse<String> response = client
-                .send(request, HttpResponse.BodyHandlers.ofString());
+            String resp = response.body();
+            Gson gson = new GsonBuilder().create();
+            EnderecoCEP enderecoCEP = gson.fromJson(resp, EnderecoCEP.class);
+            Endereco endereco = new Endereco(enderecoCEP.cep(),
+                    enderecoCEP.logradouro(), enderecoCEP.bairro(),
+                    enderecoCEP.localidade(), enderecoCEP.uf());
 
-        String resp = response.body();
-//        System.out.println(resp);
+            System.out.println("Objeto convertido: " + endereco);
+            GerarArquivo gerador = new GerarArquivo();
+            gerador.salvaJson(endereco);
 
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
+        } catch (RuntimeException | IOException e) {
+            System.out.println("Erro de comunicação com a API: " + e.getMessage());
 
-        EnderecoCEP enderecoCEP = gson.fromJson(resp, EnderecoCEP.class);
-//        System.out.println("Objeto convertido: " + enderecoCEP);
-
-        Endereco endereco = new Endereco(enderecoCEP.logradouro(), enderecoCEP.bairro(), enderecoCEP.localidade(), enderecoCEP.uf());
-
-        System.out.println("Objeto convertido: " + endereco);
-
+        }
     }
 }
